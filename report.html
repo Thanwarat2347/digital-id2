@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายงานการเข้างาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="js/api-config.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sarabun', sans-serif; min-height: 100vh; background: linear-gradient(160deg, #0a1929 0%, #0d1f2d 60%, #08171f 100%); color: #e2e8f0; display: flex; justify-content: center; padding: 20px; position: relative; }
+    body::before {
+      content: '';
+      position: fixed;
+      width: 500px; height: 500px;
+      background: #22c55e;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.1;
+      bottom: -150px; left: -150px;
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 400px; height: 400px;
+      background: #10b981;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.08;
+      top: -80px; right: -80px;
+      pointer-events: none; z-index: 0;
+    }
+    .container { width: 100%; max-width: 1080px; position: relative; z-index: 1; }
+    h1 { font-size: 1.8rem; margin-bottom: 10px; background: linear-gradient(135deg, #22c55e, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .panel { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    label { color: #94a3b8; font-size: 0.85rem; }
+    input, select { background: rgba(0,0,0,0.3); border: 1px solid rgba(148,163,184,0.25); color: #e2e8f0; border-radius: 8px; padding: 8px 10px; min-width: 150px; }
+    button { border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 600; color: #fff; background: linear-gradient(135deg, #22c55e, #16a34a); transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(34,197,94,0.2); }
+    button:hover { box-shadow: 0 6px 25px rgba(34,197,94,0.4); transform: translateY(-1px); }
+    #dataTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    #dataTable th, #dataTable td { border: 1px solid rgba(148,163,184,0.27); padding: 8px; font-size: 0.86rem; }
+    #dataTable th { background: rgba(34,197,94,0.2); }
+    #dataTable td { background: rgba(0,0,0,0.16); }
+    .status-on-time { color: #22c55e; font-weight: 700; }
+    .status-late { color: #fb7185; font-weight: 700; }
+    .status-early { color: #facc15; font-weight: 700; }
+    .status-out-of-zone { color: #f87171; font-weight: 700; }
+    .status-unknown { color: #94a3b8; font-weight: 600; }
+
+    .toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%) translateY(12px); min-width: 220px; padding: 10px 14px; border-radius: 12px; color: #fff; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+
+    @media (max-width: 768px) { .row { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" style="color:#94a3b8; text-decoration:none; font-weight:600;">← กลับเมนูหลัก</a>
+    <h1>📊 รายงานการเข้างาน</h1>
+
+    <div class="panel row">
+      <label>ค้นหา</label>
+      <input type="date" id="fromDate">
+      <input type="date" id="toDate">
+      <button onclick="applyFilter()">ค้นหา</button>
+      <button onclick="resetFilter()" style="background:#3b82f6;">รีเซ็ต</button>
+      <button onclick="exportCsv()" style="margin-left:auto;">ดาวน์โหลด CSV</button>
+    </div>
+
+    <div class="panel" id="summary"></div>
+
+    <div class="panel" style="overflow-x:auto;">
+      <table id="dataTable">
+        <thead><tr><th>Name</th><th>Time</th><th>Date</th><th>Lat</th><th>Lng</th><th>Status</th><th>Distance (KM)</th><th>Map Link</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API_URL = localStorage.getItem('gasApiUrl') || GAS_API_URL;
+    const toastDiv = document.getElementById('toast');
+    let attendanceData = [];
+
+    function showToast(text, type='info') {
+      toastDiv.innerText = text;
+      toastDiv.className = 'toast show ' + type;
+      setTimeout(() => toastDiv.className = 'toast', 2400);
+    }
+
+    function loadData() {
+      if (!API_URL) { showToast('❌ API URL ยังไม่ระบุ', 'error'); return; }
+      fetch(API_URL + '?action=getAttendance')
+        .then(r => r.json())
+        .then(data => {
+          attendanceData = Array.isArray(data) ? data : [];
+          renderTable(attendanceData);
+          updateSummary(attendanceData);
+          showToast('✅ โหลดข้อมูลสำเร็จ', 'success');
+        })
+        .catch(e => { showToast('❌ โหลดข้อมูลผิดพลาด: ' + e.message, 'error'); });
+    }
+
+    function renderTable(data) {
+      const container = document.getElementById('tableBody');
+      container.innerHTML = '';
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        const status = String(row.Status || row.status || 'unknown').toLowerCase();
+        tr.innerHTML = `
+          <td>${row.Name || ''}</td>
+          <td>${row.Time || ''}</td>
+          <td>${row.Date || ''}</td>
+          <td>${row.Latitude || row.Lat || ''}</td>
+          <td>${row.Longitude || row.Lng || ''}</td>
+          <td class="status-${status}">${status}</td>
+          <td>${Number(row.DistanceKM || row.distance || 0).toFixed(3)}</td>
+          <td>${row['Google Map Link'] ? `<a href="${row['Google Map Link']}" target="_blank">ลิงก์</a>` : ''}</td>
+        `;
+        container.appendChild(tr);
+      });
+    }
+
+    function updateSummary(data) {
+      const summary = document.getElementById('summary');
+      const total = data.length;
+      const onTime = data.filter(d => (d.Status || d.status || '').toLowerCase() === 'on-time').length;
+      const late = data.filter(d => (d.Status || d.status || '').toLowerCase() === 'late').length;
+      const early = data.filter(d => (d.Status || d.status || '').toLowerCase() === 'early').length;
+      const out = data.filter(d => (d.Status || d.status || '').toLowerCase() === 'out-of-zone').length;
+
+      summary.innerHTML = `<strong>สรุป:</strong> ทั้งหมด ${total} รายการ / เข้างานตรงเวลา ${onTime} / สาย ${late} / ก่อนเวลา ${early} / นอกโซน ${out}`;
+    }
+
+    function applyFilter() {
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      const filtered = attendanceData.filter(r => {
+        if (!from && !to) return true;
+        const d = new Date(r.Date.replace("'", ""));
+        if (from && d < new Date(from)) return false;
+        if (to && d > new Date(to)) return false;
+        return true;
+      });
+      renderTable(filtered);
+      updateSummary(filtered);
+    }
+
+    function resetFilter() {
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      renderTable(attendanceData);
+      updateSummary(attendanceData);
+    }
+
+    function exportCsv() {
+      if (!attendanceData.length) { showToast('ไม่มีข้อมูลให้ดาวน์โหลด', 'error'); return; }
+      const headers = ['Name', 'Time', 'Date', 'Latitude', 'Longitude', 'Status', 'DistanceKM', 'Google Map Link'];
+      const csvRows = [headers.join(',')];
+      attendanceData.forEach(r => {
+        const row = [r.Name || '', r.Time || '', r.Date || '', r.Latitude || r.Lat || '', r.Longitude || r.Lng || '', r.Status || r.status || '', r.DistanceKM || r.distance || '', r['Google Map Link'] || ''];
+        csvRows.push(row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+      });
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'attendance_report_' + new Date().toISOString().slice(0,10) + '.csv');
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('✅ ดาวน์โหลด CSV สำเร็จ', 'success');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

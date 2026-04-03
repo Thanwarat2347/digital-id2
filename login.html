@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a1929 0%, #132f4c 40%, #0d1b2a 100%);
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Animated orbs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 500px; height: 500px;
+      background: #22c55e;
+      top: -150px; left: -150px;
+      animation: float 7s ease-in-out infinite;
+    }
+    body::after {
+      width: 450px; height: 450px;
+      background: #10b981;
+      bottom: -180px; right: -180px;
+      animation: float 8s ease-in-out infinite reverse;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      background: linear-gradient(160deg, #1e1e3f 0%, #16213e 100%);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 24px;
+      padding: 40px 32px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(34,197,94,0.1);
+      position: relative;
+      z-index: 1;
+      animation: slideUp 0.6s ease;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 16px;
+      animation: iconBounce 2s ease-in-out infinite;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      font-weight: 700;
+      background: linear-gradient(135deg, #22c55e, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.88em;
+      color: #94a3b8;
+      letter-spacing: 0.03em;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85em;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      color: #e2e8f0;
+      font-size: 15px;
+      font-family: 'Sarabun', sans-serif;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input::placeholder { color: #475569; }
+
+    input:focus {
+      border-color: rgba(34,197,94,0.6);
+      background: rgba(34,197,94,0.08);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+    }
+
+    #loginBtn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'Sarabun', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 25px rgba(34,197,94,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    #loginBtn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 35px rgba(34,197,94,0.5);
+    }
+
+    #loginBtn:active {
+      transform: translateY(-1px);
+    }
+
+    #loginBtn:disabled {
+      background: rgba(255,255,255,0.1);
+      color: #475569;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    #errorMsg {
+      min-height: 20px;
+      font-size: 0.9em;
+      font-weight: 600;
+      margin-top: 16px;
+      text-align: center;
+      color: #f87171;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #errorMsg.show {
+      opacity: 1;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .back-link a {
+      color: #64748b;
+      text-decoration: none;
+      font-size: 0.88em;
+      transition: color 0.3s ease;
+    }
+
+    .back-link a:hover {
+      color: #22c55e;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) translateX(0px); }
+      50% { transform: translateY(30px) translateX(15px); }
+    }
+
+    @keyframes iconBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-header">
+      <span class="logo-icon">🔐</span>
+      <h1>Admin Login</h1>
+      <p class="subtitle">ยืนยันตัวตน Admin</p>
+    </div>
+
+    <div class="form-group">
+      <label for="username">ชื่อผู้ใช้</label>
+      <input type="text" id="username" placeholder="admin" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label for="password">รหัสผ่าน</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="off">
+    </div>
+
+    <button id="loginBtn" onclick="handleLogin()">
+      <span>🔓</span> <span id="btnText">เข้าสู่ระบบ</span>
+    </button>
+
+    <div id="errorMsg"></div>
+
+    <div class="back-link">
+      <a href="index.html">← กลับไปหน้าแรก</a>
+    </div>
+  </div>
+
+  <script>
+    const username = document.getElementById('username');
+    const password = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const btnText = document.getElementById('btnText');
+
+    // Default credentials
+    const ADMIN_USER = 'admin';
+    const ADMIN_PASS = 'kasuya2026';
+
+    function showError(msg) {
+      errorMsg.innerText = msg;
+      errorMsg.classList.add('show');
+      setTimeout(() => errorMsg.classList.remove('show'), 3000);
+    }
+
+    function handleLogin() {
+      const user = username.value.trim();
+      const pass = password.value.trim();
+
+      if (!user || !pass) {
+        showError('❌ กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      btnText.innerText = '⏳ กำลังยืนยัน...';
+
+      setTimeout(() => {
+        if (user === ADMIN_USER && pass === ADMIN_PASS) {
+          localStorage.setItem('adminToken', '1');
+          localStorage.setItem('adminUser', user);
+          errorMsg.style.color = '#22c55e';
+          showError('✅ เข้าสู่ระบบสำเร็จ!');
+          setTimeout(() => window.location.href = 'config.html', 500);
+        } else {
+          showError('❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+          loginBtn.disabled = false;
+          btnText.innerText = 'เข้าสู่ระบบ';
+        }
+      }, 600);
+    }
+
+    // Allow Enter key to submit
+    [username, password].forEach(el => {
+      el.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+    });
+
+    // Auto-focus first input
+    username.focus();
+  </script>
+
+</body>
+</html>

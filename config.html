@@ -12,7 +12,7 @@
     body {
       font-family: 'Sarabun', sans-serif;
       min-height: 100vh;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d1b2a 100%);
+      background: linear-gradient(135deg, #0a1929 0%, #132f4c 40%, #0d1f2d 100%);
       color: #e2e8f0;
       display: flex;
       flex-direction: column;
@@ -24,13 +24,14 @@
     body::before {
       content: '';
       position: fixed;
-      width: 400px; height: 400px;
+      width: 450px; height: 450px;
       background: #06b6d4;
       border-radius: 50%;
-      filter: blur(100px);
-      opacity: 0.08;
+      filter: blur(120px);
+      opacity: 0.12;
       top: -100px; right: -100px;
       pointer-events: none; z-index: 0;
+      animation: float 7s ease-in-out infinite;
     }
 
     .container {
@@ -55,7 +56,7 @@
 
     h2 {
       font-size: 1.6em; font-weight: 700;
-      background: linear-gradient(135deg, #a5b4fc, #e2e8f0);
+      background: linear-gradient(135deg, #22c55e, #06b6d4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -109,9 +110,9 @@
     }
     input::placeholder { color: #334155; }
     input:focus {
-      border-color: rgba(99,102,241,0.5);
-      background: rgba(99,102,241,0.07);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+      border-color: rgba(34,197,94,0.6);
+      background: rgba(34,197,94,0.08);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
     }
     .note {
       font-size: 0.78em; color: #475569;
@@ -127,23 +128,23 @@
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
     .btn-get-loc {
-      background: linear-gradient(135deg, #0891b2, #06b6d4);
+      background: linear-gradient(135deg, #22c55e, #16a34a);
       color: white;
-      box-shadow: 0 4px 15px rgba(6,182,212,0.3);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.35);
       margin-bottom: 18px;
     }
     .btn-get-loc:hover {
-      box-shadow: 0 6px 25px rgba(6,182,212,0.45);
-      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(34,197,94,0.5);
+      transform: translateY(-2px);
     }
     .btn-save {
-      background: linear-gradient(135deg, #10b981, #059669);
+      background: linear-gradient(135deg, #22c55e, #16a34a);
       color: white;
-      box-shadow: 0 4px 20px rgba(16,185,129,0.3);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.35);
       font-size: 16px; padding: 15px;
     }
     .btn-save:hover {
-      box-shadow: 0 8px 30px rgba(16,185,129,0.5);
+      box-shadow: 0 10px 35px rgba(34,197,94,0.55);
       transform: translateY(-2px);
     }
 
@@ -175,6 +176,28 @@
       font-size: 0.9em; font-weight: 600;
       text-align: center;
     }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(12px);
+      min-width: 220px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.95em;
+      font-weight: 600;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .toast.success { background: #059669; }
+    .toast.error { background: #dc2626; }
+    .toast.info { background: #0ea5e9; }
     .msg-success { color: #34d399; }
     .msg-error   { color: #f87171; }
 
@@ -200,6 +223,11 @@
 
     <label>WEB APP URL</label>
     <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+
+    <label>Admin PIN</label>
+    <input type="password" id="adminPin" placeholder="ตั้ง PIN สำหรับ config หน้า" autocomplete="new-password">
+    <p class="note">สำหรับการเข้าใช้งานตั้งค่าระบบ ป้องกันคนไม่ควรแก้</p>
+
     <p class="note">Deploy GAS แล้วนำ URL มาวางที่นี่ (Execute as: Me / Anyone can access)</p>
   </div>
 
@@ -228,6 +256,12 @@
     <label>รัศมีที่ยอมรับ (กิโลเมตร)</label>
     <input type="number" step="0.01" id="radius" placeholder="เช่น 0.1 คือ 100 เมตร">
     <p class="note">* ใส่ 0 หากไม่ต้องการจำกัดพื้นที่</p>
+
+    <label>เวลาเริ่มทำงาน (HH:MM:SS)</label>
+    <input type="text" id="startTime" placeholder="09:00:00">
+
+    <label>เกณฑ์สาย (นาที)</label>
+    <input type="number" id="lateThreshold" placeholder="10">
   </div>
 
   <!-- Actions -->
@@ -239,13 +273,42 @@
   <a href="index.html" class="btn-back">← กลับเมนูหลัก</a>
 </div>
 
-<script>
-  const msgDiv = document.getElementById('msg');
+<div id="toast" class="toast"></div>
 
-  // โหลดค่าที่บันทึกไว้
+<script>
+  const DEFAULT_ADMIN_PIN = '1234';
+  const msgDiv    = document.getElementById('msg');
+  const toastDiv  = document.getElementById('toast');
+  const pinInput  = document.getElementById('adminPin');
+
+  const savedPin  = localStorage.getItem('adminPin') || DEFAULT_ADMIN_PIN;
+  function showToast(text, type='info') {
+    toastDiv.innerText = text;
+    toastDiv.className = 'toast show ' + type;
+    setTimeout(() => { toastDiv.className = 'toast'; }, 2500);
+  }
+
+  function showMsg(text, type) {
+    msgDiv.innerText = text;
+    msgDiv.className = type === 'success' ? 'msg-success' : type === 'error' ? 'msg-error' : '';
+    if (type === 'success') showToast(text, 'success');
+    if (type === 'error') showToast(text, 'error');
+  }
+
   window.onload = function() {
     const savedUrl = localStorage.getItem('gasApiUrl') || GAS_API_URL;
+    const adminPin = localStorage.getItem('adminPin') || DEFAULT_ADMIN_PIN;
     document.getElementById('apiUrl').value = savedUrl;
+    pinInput.value = adminPin;
+
+    if (adminPin) {
+      const enteredPin = prompt('กรุณาใส่รหัส PIN Admin เพื่อเข้าเมนูตั้งค่า');
+      if (enteredPin !== adminPin) {
+        showMsg('❌ PIN ไม่ถูกต้อง ปิดหน้าเพจและทดลองใหม่', 'error');
+        document.querySelectorAll('input, button').forEach(el => el.disabled = true);
+        return;
+      }
+    }
 
     if (savedUrl) {
       loadGpsConfig(savedUrl);
@@ -256,53 +319,56 @@
     fetch(apiUrl + '?action=getConfig')
       .then(r => r.json())
       .then(config => {
-        document.getElementById('lat').value    = config.lat    || '';
-        document.getElementById('lng').value    = config.lng    || '';
-        document.getElementById('radius').value = config.radius || '0.5';
+        document.getElementById('lat').value       = config.lat    || '';
+        document.getElementById('lng').value       = config.lng    || '';
+        document.getElementById('radius').value    = config.radius || '0.5';
+        document.getElementById('startTime').value = config.startTime || '09:00:00';
+        document.getElementById('lateThreshold').value = config.lateThreshold || 10;
       })
-      .catch(() => {}); // ถ้าโหลดไม่ได้ก็ข้ามไป
+      .catch(() => {});
   }
 
   function getCurrentLocation() {
-    if (!navigator.geolocation) return alert('Browser นี้ไม่รองรับ Geolocation');
+    if (!navigator.geolocation) return showToast('Browser นี้ไม่รองรับ Geolocation', 'error');
     navigator.geolocation.getCurrentPosition(
       pos => {
         document.getElementById('lat').value = pos.coords.latitude;
         document.getElementById('lng').value = pos.coords.longitude;
-        alert('✅ ดึงพิกัดเรียบร้อย');
+        showToast('✅ ดึงพิกัดเรียบร้อย', 'success');
       },
-      err => alert('❌ ไม่สามารถดึงตำแหน่งได้: ' + err.message)
+      err => showToast('❌ ไม่สามารถดึงตำแหน่งได้: ' + err.message, 'error')
     );
   }
 
   async function saveAll() {
-    const apiUrl = document.getElementById('apiUrl').value.trim();
-    const lat    = document.getElementById('lat').value;
-    const lng    = document.getElementById('lng').value;
-    const radius = document.getElementById('radius').value;
+    const apiUrl       = document.getElementById('apiUrl').value.trim();
+    const lat          = document.getElementById('lat').value;
+    const lng          = document.getElementById('lng').value;
+    const radius       = document.getElementById('radius').value;
+    const startTime    = document.getElementById('startTime').value.trim() || '09:00:00';
+    const lateThreshold= document.getElementById('lateThreshold').value || 10;
+    const adminPinVal  = document.getElementById('adminPin').value.trim();
 
     if (!apiUrl) return showMsg('❌ กรุณากรอก API URL', 'error');
     if (!lat || !lng || !radius) return showMsg('❌ กรุณากรอกข้อมูล GPS ให้ครบ', 'error');
+    if (!adminPinVal) return showMsg('❌ กรุณากรอก Admin PIN', 'error');
 
-    // บันทึก API URL ลง localStorage
     localStorage.setItem('gasApiUrl', apiUrl);
-    showMsg('⏳ กำลังบันทึก...', '');
+    localStorage.setItem('adminPin', adminPinVal);
+    showMsg('⏳ กำลังบันทึก...', 'info');
 
     try {
       const res = await fetch(apiUrl, {
         method: 'POST',
-        body: JSON.stringify({ action: 'saveConfig', lat, lng, radius })
+        body: JSON.stringify({ action: 'saveConfig', lat, lng, radius, startTime, lateThreshold })
       });
       const data = await res.json();
+      if (data.error) return showMsg('❌ ' + data.error, 'error');
+
       showMsg('✅ ' + (data.message || 'บันทึกสำเร็จ'), 'success');
     } catch (e) {
       showMsg('❌ เชื่อมต่อ API ไม่ได้: ' + e.message, 'error');
     }
-  }
-
-  function showMsg(text, type) {
-    msgDiv.innerText = text;
-    msgDiv.className = type === 'success' ? 'msg-success' : type === 'error' ? 'msg-error' : '';
   }
 </script>
 </body>

@@ -12,7 +12,7 @@
     body {
       font-family: 'Sarabun', sans-serif;
       min-height: 100vh;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d1b2a 100%);
+      background: linear-gradient(135deg, #0a1929 0%, #132f4c 40%, #0d2c3b 100%);
       color: #e2e8f0;
       display: flex;
       flex-direction: column;
@@ -22,25 +22,27 @@
       overflow-x: hidden;
     }
 
-    /* Ambient orbs */
+    /* Ambient orbs - more vibrant */
     body::before, body::after {
       content: '';
       position: fixed;
       border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.15;
+      filter: blur(100px);
+      opacity: 0.2;
       pointer-events: none;
       z-index: 0;
     }
     body::before {
-      width: 400px; height: 400px;
-      background: #6366f1;
-      top: -100px; left: -100px;
+      width: 500px; height: 500px;
+      background: #22c55e;
+      top: -150px; left: -150px;
+      animation: float 6s ease-in-out infinite;
     }
     body::after {
-      width: 350px; height: 350px;
+      width: 400px; height: 400px;
       background: #10b981;
-      bottom: -80px; right: -80px;
+      bottom: -100px; right: -100px;
+      animation: float 8s ease-in-out infinite reverse;
     }
 
     /* Header */
@@ -59,11 +61,12 @@
     h1 {
       font-size: 1.7em;
       font-weight: 700;
-      background: linear-gradient(135deg, #a5b4fc, #e2e8f0);
+      background: linear-gradient(135deg, #22c55e, #10b981, #06b6d4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       margin-bottom: 6px;
+      letter-spacing: -0.5px;
     }
     .subtitle {
       font-size: 0.85em;
@@ -123,20 +126,25 @@
       border-color: rgba(255,255,255,0.25);
     }
 
-    .btn-register:hover { box-shadow: 0 8px 30px rgba(99,102,241,0.35); border-color: rgba(99,102,241,0.5); }
-    .btn-scan:hover     { box-shadow: 0 8px 30px rgba(16,185,129,0.35); border-color: rgba(16,185,129,0.5); }
-    .btn-config:hover   { box-shadow: 0 8px 30px rgba(100,116,139,0.25); border-color: rgba(148,163,184,0.4); }
+    .btn-register:hover { box-shadow: 0 12px 40px rgba(34,197,94,0.45); border-color: rgba(34,197,94,0.6); background: rgba(34,197,94,0.15); }
+    .btn-scan:hover     { box-shadow: 0 12px 40px rgba(16,185,129,0.45); border-color: rgba(16,185,129,0.6); background: rgba(16,185,129,0.15); }
+    .btn-config:hover   { box-shadow: 0 12px 40px rgba(6,182,212,0.35); border-color: rgba(6,182,212,0.5); background: rgba(6,182,212,0.1); }
 
     .card-icon {
-      width: 52px; height: 52px;
-      border-radius: 14px;
+      width: 56px; height: 56px;
+      border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
+      font-size: 28px;
       flex-shrink: 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      animation: iconBounce 2s ease-in-out infinite;
     }
-    .btn-register .card-icon { background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
-    .btn-scan     .card-icon { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
-    .btn-config   .card-icon { background: linear-gradient(135deg, #475569, #334155); box-shadow: 0 4px 15px rgba(71,85,105,0.4); }
+    .btn-menu:nth-child(1) .card-icon { animation-delay: 0s; }
+    .btn-menu:nth-child(2) .card-icon { animation-delay: 0.15s; }
+    .btn-menu:nth-child(3) .card-icon { animation-delay: 0.3s; }
+    .btn-register .card-icon { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .btn-scan     .card-icon { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn-config   .card-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
 
     .card-text { flex: 1; text-align: left; }
     .card-title { font-size: 1.05em; font-weight: 600; color: #f1f5f9; margin-bottom: 2px; }
@@ -148,10 +156,146 @@
     }
     .btn-menu:hover .card-arrow { transform: translateX(4px); color: #94a3b8; }
 
+    /* Login Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-overlay.show { display: flex; }
+
+    .modal-content {
+      background: linear-gradient(160deg, #1e1e3f 0%, #16213e 100%);
+      border: 1px solid rgba(34,197,94,0.2);
+      padding: 40px 32px;
+      border-radius: 24px;
+      width: 88%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(34,197,94,0.1);
+      animation: modalSlideUp 0.4s ease;
+    }
+
+    .modal-header {
+      margin-bottom: 28px;
+    }
+    .modal-icon {
+      font-size: 52px;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .modal-title {
+      font-size: 1.6em;
+      font-weight: 700;
+      background: linear-gradient(135deg, #22c55e, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .modal-subtitle {
+      font-size: 0.85em;
+      color: #94a3b8;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.82em;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      color: #e2e8f0;
+      font-size: 14px;
+      font-family: 'Sarabun', sans-serif;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .form-group input::placeholder { color: #475569; }
+    .form-group input:focus {
+      border-color: rgba(34,197,94,0.6);
+      background: rgba(34,197,94,0.08);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 13px;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Sarabun', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #modalLoginBtn {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+    }
+    #modalLoginBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(34,197,94,0.5);
+    }
+    #modalLoginBtn:disabled {
+      background: rgba(255,255,255,0.1);
+      color: #475569;
+      cursor: not-allowed;
+    }
+    #modalCancelBtn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+    }
+    #modalCancelBtn:hover {
+      background: rgba(255,255,255,0.12);
+      color: #e2e8f0;
+    }
+
+    #loginError {
+      min-height: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      margin-top: 16px;
+      color: #f87171;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #loginError.show {
+      opacity: 1;
+    }
+
     /* Animations */
     @keyframes fadeIn    { from { opacity: 0; }                      to { opacity: 1; } }
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeInUp  { from { opacity: 0; transform: translateY(20px);  } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float     { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(30px); } }
+    @keyframes iconBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes modalSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
@@ -164,7 +308,7 @@
 
   <div id="apiWarning" class="api-warning">
     ⚠️ ยังไม่ได้ตั้งค่า API —
-    <a href="config.html">ไปตั้งค่าก่อน</a>
+    <a href="#" onclick="openLoginModal(); return false;">ไปตั้งค่าก่อน</a>
   </div>
 
   <div class="menu-cards">
@@ -186,17 +330,106 @@
       <span class="card-arrow">›</span>
     </a>
 
-    <a href="config.html" class="btn-menu btn-config">
+    <button class="btn-menu btn-config" onclick="openLoginModal()" style="display: flex; align-items: center; gap: 16px; padding: 20px 22px; text-decoration: none; border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #e2e8f0; cursor: pointer; transition: all 0.3s ease; animation: fadeInUp 0.5s ease both; animation-delay: 0.3s;">
       <div class="card-icon">⚙️</div>
       <div class="card-text">
         <div class="card-title">ตั้งค่าระบบ</div>
         <div class="card-desc">จัดการ GPS และ API (Admin)</div>
       </div>
       <span class="card-arrow">›</span>
-    </a>
+    </button>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-icon">🔐</span>
+        <div class="modal-title">Admin Login</div>
+        <div class="modal-subtitle">ยืนยันตัวตน Admin</div>
+      </div>
+
+      <form onsubmit="handleModalLogin(event)">
+        <div class="form-group">
+          <label for="modalUsername">ชื่อผู้ใช้</label>
+          <input type="text" id="modalUsername" placeholder="admin" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="modalPassword">รหัสผ่าน</label>
+          <input type="password" id="modalPassword" placeholder="••••••••" autocomplete="off">
+        </div>
+
+        <div id="loginError"></div>
+
+        <div class="modal-buttons">
+          <button type="submit" id="modalLoginBtn">
+            <span>🔓</span> เข้าสู่ระบบ
+          </button>
+          <button type="button" id="modalCancelBtn" onclick="closeLoginModal()">
+            ยกเลิก
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
+    const ADMIN_USER = 'admin';
+    const ADMIN_PASS = 'kasuya2026';
+
+    function openLoginModal() {
+      document.getElementById('loginModal').classList.add('show');
+      document.getElementById('modalUsername').focus();
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.remove('show');
+      document.getElementById('modalUsername').value = '';
+      document.getElementById('modalPassword').value = '';
+      document.getElementById('loginError').classList.remove('show');
+    }
+
+    function handleModalLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('modalUsername').value.trim();
+      const pass = document.getElementById('modalPassword').value.trim();
+      const errorDiv = document.getElementById('loginError');
+      const btn = document.getElementById('modalLoginBtn');
+
+      if (!user || !pass) {
+        errorDiv.innerText = '❌ กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+        errorDiv.classList.add('show');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '⏳ กำลังยืนยัน...';
+
+      setTimeout(() => {
+        if (user === ADMIN_USER && pass === ADMIN_PASS) {
+          localStorage.setItem('adminToken', '1');
+          localStorage.setItem('adminUser', user);
+          errorDiv.style.color = '#22c55e';
+          errorDiv.innerText = '✅ เข้าสู่ระบบสำเร็จ!';
+          errorDiv.classList.add('show');
+          setTimeout(() => window.location.href = 'config.html', 600);
+        } else {
+          errorDiv.style.color = '#f87171';
+          errorDiv.innerText = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+          errorDiv.classList.add('show');
+          btn.disabled = false;
+          btn.innerHTML = '<span>🔓</span> เข้าสู่ระบบ';
+        }
+      }, 600);
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLoginModal();
+    });
+
+    // Check API URL
     if (!localStorage.getItem('gasApiUrl') && typeof GAS_API_URL === 'undefined') {
       document.getElementById('apiWarning').style.display = 'block';
     }
