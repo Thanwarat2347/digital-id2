@@ -392,6 +392,7 @@
   let currentLat   = null;
   let currentLng   = null;
   let configData   = null;
+  let currentStatus = null;
 
   // ===== Init =====
   if (!API_URL) {
@@ -579,12 +580,20 @@
     const fullTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     const status = calculateStatus(currentLat, currentLng, fullTimeStr);
+    currentStatus = status;
 
     document.getElementById('modalTime').innerText  = 'เวลาเข้างาน: ' + timeStr + ' น.';
     document.getElementById('modalTime').className = 'time-badge status-' + status;
 
     const pct = ((1 - match.distance) * 100).toFixed(1);
     document.getElementById('modalScore').innerText = 'ความเหมือน: ' + pct + '%';
+
+    const reasonInput = document.createElement('input');
+    reasonInput.id = 'reasonInput';
+    reasonInput.type = 'text';
+    reasonInput.placeholder = status === 'late' ? 'เหตุผลที่มาสาย (บังคับ)' : 'เหตุผลเพิ่มเติม (ไม่บังคับ)';
+    reasonInput.style = 'width: 100%; padding: 8px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px;';
+    document.querySelector('.modal-content').appendChild(reasonInput);
 
     confirmModal.style.display = 'flex';
     mainStatus.innerText = 'กรุณายืนยัน...';
@@ -596,11 +605,32 @@
     btn.innerText  = '⏳ กำลังบันทึก...';
 
     try {
-      const res = await fetch(API_URL, {
+      const now = new Date();
+      const fullTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const currentStatus = calculateStatus(currentLat, currentLng, fullTimeStr);  if (currentStatus === 'late') {
+    alert('คุณมาสาย! กรุณากรอกเหตุผลที่มาสาย');
+  }      const reasonValue = document.getElementById('reasonInput') ? document.getElementById('reasonInput').value : '';
+      if (currentStatus === 'late' && !reasonValue.trim()) {
+        showToast('กรุณากรอกเหตุผลที่มาสาย', 'error');
+        btn.disabled = false;
+        btn.innerText = '✅ ยืนยันเข้างาน';
+        return;
+      }
+      console.log('Sending attendance data:', {
+    action: 'logAttendance',
+    name: currentMatch,
+    lat: currentLat,
+    lng: currentLng,
+    time: new Date().toISOString(),
+    reason: reasonValue,
+    status: currentStatus
+  });
+  const res = await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'logAttendance', name: currentMatch, lat: currentLat, lng: currentLng })
+        body: JSON.stringify({ action: 'logAttendance', name: currentMatch, lat: currentLat, lng: currentLng, time: new Date().toISOString(), reason: reasonValue })
       });
       const data = await res.json();
+      console.log('Server response:', data);
 
       if (data.error) {
         showToast('❌ ' + data.error, 'error');
@@ -610,6 +640,9 @@
       }
 
       showToast('✅ ' + (data.message || 'บันทึกเวลาสำเร็จ') + ' (' + (data.status || 'unknown') + ')', 'success');
+      if (data.status === 'late') {
+        setTimeout(() => showToast('⚠️ คุณมาสาย! กรุณาอธิบายเหตุผล', 'error'), 1000);
+      }
       setTimeout(() => { window.location.href = 'index.html'; }, 800);
     } catch (e) {
       showToast('❌ บันทึกล้มเหลว: ' + e.message, 'error');
@@ -621,6 +654,7 @@
   function cancelAttendance() {
     confirmModal.style.display = 'none';
     currentMatch = null;
+    currentStatus = null;
     if (scanInterval) clearInterval(scanInterval);
 
     if (video.srcObject) {

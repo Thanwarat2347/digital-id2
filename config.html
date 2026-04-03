@@ -258,7 +258,7 @@
     <p class="note">* ใส่ 0 หากไม่ต้องการจำกัดพื้นที่</p>
 
     <label>เวลาเริ่มทำงาน (HH:MM:SS)</label>
-    <input type="text" id="startTime" placeholder="09:00:00">
+    <input type="text" id="startTime" placeholder="08:00:00">
 
     <label>เกณฑ์สาย (นาที)</label>
     <input type="number" id="lateThreshold" placeholder="10">
@@ -322,7 +322,7 @@
         document.getElementById('lat').value       = config.lat    || '';
         document.getElementById('lng').value       = config.lng    || '';
         document.getElementById('radius').value    = config.radius || '0.5';
-        document.getElementById('startTime').value = config.startTime || '09:00:00';
+        document.getElementById('startTime').value = config.startTime || '08:00:00';
         document.getElementById('lateThreshold').value = config.lateThreshold || 10;
       })
       .catch(() => {});
@@ -345,7 +345,7 @@
     const lat          = document.getElementById('lat').value;
     const lng          = document.getElementById('lng').value;
     const radius       = document.getElementById('radius').value;
-    const startTime    = document.getElementById('startTime').value.trim() || '09:00:00';
+    const startTime    = document.getElementById('startTime').value.trim() || '08:00:00';
     const lateThreshold= document.getElementById('lateThreshold').value || 10;
     const adminPinVal  = document.getElementById('adminPin').value.trim();
 

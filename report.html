@@ -75,7 +75,7 @@
 
     <div class="panel" style="overflow-x:auto;">
       <table id="dataTable">
-        <thead><tr><th>Name</th><th>Time</th><th>Date</th><th>Lat</th><th>Lng</th><th>Status</th><th>Distance (KM)</th><th>Map Link</th></tr></thead>
+        <thead><tr><th>Name</th><th>Time</th><th>Date</th><th>Lat</th><th>Lng</th><th>Status</th><th>Distance (KM)</th><th>Reason</th><th>Map Link</th></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
@@ -121,6 +121,7 @@
           <td>${row.Longitude || row.Lng || ''}</td>
           <td class="status-${status}">${status}</td>
           <td>${Number(row.DistanceKM || row.distance || 0).toFixed(3)}</td>
+          <td>${row.Reason || ''}</td>
           <td>${row['Google Map Link'] ? `<a href="${row['Google Map Link']}" target="_blank">ลิงก์</a>` : ''}</td>
         `;
         container.appendChild(tr);
