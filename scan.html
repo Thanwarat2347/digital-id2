@@ -224,12 +224,41 @@
       margin-bottom: 12px;
     }
     .time-badge {
-      background: rgba(34,197,94,0.15);
-      border: 1px solid rgba(34,197,94,0.3);
-      color: #22c55e;
       padding: 8px 22px; border-radius: 30px;
       font-size: 15px; font-weight: 600;
       margin-bottom: 6px;
+      transition: all 0.3s ease;
+    }
+
+    /* Status colors for time badge */
+    .status-on-time {
+      background: rgba(34,197,94,0.15);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: #22c55e;
+    }
+
+    .status-late {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #ef4444;
+    }
+
+    .status-early {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.3);
+      color: #f59e0b;
+    }
+
+    .status-out-of-zone {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #ef4444;
+    }
+
+    .status-unknown {
+      background: rgba(107,114,128,0.15);
+      border: 1px solid rgba(107,114,128,0.3);
+      color: #6b7280;
     }
     .score-text { color: #475569; font-size: 13px; margin-bottom: 20px; }
 
@@ -362,6 +391,7 @@
   let currentMatch = null;
   let currentLat   = null;
   let currentLng   = null;
+  let configData   = null;
 
   // ===== Init =====
   if (!API_URL) {
@@ -393,6 +423,7 @@
 
           try {
             const config = await fetch(API_URL + '?action=getConfig').then(r => r.json());
+            configData = config; // Store config globally
 
             if (!config.lat || !config.lng || config.radius == 0) {
               gpsStatus.innerHTML = '<span style="color:#34d399">📍 GPS: ไม่จำกัดพื้นที่</span>';
@@ -517,13 +548,40 @@
   }
 
   // ===== Modal =====
+  function calculateStatus(lat, lng, timeStr) {
+    if (!configData || !lat || !lng) return 'unknown';
+
+    const distance = haversineKm(lat, lng, configData.lat, configData.lng);
+    if (distance > configData.radius) return 'out-of-zone';
+
+    const target = configData.startTime || '09:00:00';
+    const lateBound = configData.lateThreshold || 10;
+
+    const minute = (t) => {
+      const p = t.split(':');
+      return Number(p[0]) * 60 + Number(p[1]);
+    };
+
+    const nowMin = minute(timeStr);
+    const targetMin = minute(target);
+
+    if (nowMin < targetMin) return 'early';
+    if (nowMin <= targetMin + lateBound) return 'on-time';
+    return 'late';
+  }
+
   function showModal(match) {
     currentMatch = match.name;
     document.getElementById('modalName').innerText  = match.name;
 
     const now = new Date();
     const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const fullTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const status = calculateStatus(currentLat, currentLng, fullTimeStr);
+
     document.getElementById('modalTime').innerText  = 'เวลาเข้างาน: ' + timeStr + ' น.';
+    document.getElementById('modalTime').className = 'time-badge status-' + status;
 
     const pct = ((1 - match.distance) * 100).toFixed(1);
     document.getElementById('modalScore').innerText = 'ความเหมือน: ' + pct + '%';
